@@ -63,6 +63,7 @@ bool sbi_system_reset_supported(u32 reset_type, u32 reset_reason)
 	return !!sbi_system_reset_get_device(reset_type, reset_reason);
 }
 
+#include <sbi/riscv_io.h>
 void __noreturn sbi_system_reset(u32 reset_type, u32 reset_reason)
 {
 	ulong hbase = 0, hmask;
@@ -89,6 +90,8 @@ void __noreturn sbi_system_reset(u32 reset_type, u32 reset_reason)
 		if (dev)
 			dev->system_reset(reset_type, reset_reason);
 	}
+
+	writew(0x5555, (void *)0x100000); // qemu poweroff
 
 	/* If platform specific reset did not work then do sbi_exit() */
 	sbi_exit(scratch);
