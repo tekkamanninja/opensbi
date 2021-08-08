@@ -62,7 +62,7 @@ DTS Example1: (Single core, eg: Allwinner D1 - c906)
 				&cpu0_intc  3 &cpu0_intc  7
 				>;
 			reg = <0x0 0x14000000 0x0 0x04000000>;
-			clint,has-no-64bit-mmio;
+			reg-io-width = <4>;
 		};
 
 		intc: interrupt-controller@10000000 {
@@ -168,7 +168,7 @@ DTS Example2: (Multi cores with soc reset-regs)
 				&cpu4_intc  3 &cpu4_intc  7
 				>;
 			reg = <0xff 0xdc000000 0x0 0x04000000>;
-			clint,has-no-64bit-mmio;
+			reg-io-width = <4>;
 		};
 
 		intc: interrupt-controller@ffd8000000 {

@@ -22,9 +22,10 @@ static struct aclint_mtimer_data *mt_reference = NULL;
 static int timer_mtimer_cold_init(void *fdt, int nodeoff,
 				  const struct fdt_match *match)
 {
-	int i, rc;
+	int i, len, rc;
 	unsigned long offset, addr[2], size[2];
 	struct aclint_mtimer_data *mt;
+	const fdt32_t *val;
 
 	if (MTIMER_MAX_NR <= mtimer_count)
 		return SBI_ENOSPC;
@@ -50,7 +51,8 @@ static int timer_mtimer_cold_init(void *fdt, int nodeoff,
 		mt->mtimecmp_addr += offset;
 		mt->mtime_size -= offset;
 		/* Parse additional CLINT properties */
-		if (fdt_getprop(fdt, nodeoff, "clint,has-no-64bit-mmio", &rc))
+		val = fdt_getprop(fdt, nodeoff, "reg-io-width", &len);
+		if (val && len == sizeof(fdt32_t) && fdt32_to_cpu(*val) == 4)
 			mt->has_64bit_mmio = false;
 	} else { /* RISC-V ACLINT MTIMER */
 		/* Set ACLINT MTIMER addresses */
