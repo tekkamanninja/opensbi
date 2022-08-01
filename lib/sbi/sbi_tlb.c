@@ -30,7 +30,11 @@ static unsigned long tlb_range_flush_limit;
 
 static void tlb_flush_all(void)
 {
+#ifdef FW_NO_SFENCE_VMA
+	csr_write(0x9c3, 1 << 26);
+#else
 	__asm__ __volatile("sfence.vma");
+#endif
 }
 
 void sbi_tlb_local_hfence_vvma(struct sbi_tlb_info *tinfo)
@@ -78,6 +82,9 @@ void sbi_tlb_local_hfence_gvma(struct sbi_tlb_info *tinfo)
 
 void sbi_tlb_local_sfence_vma(struct sbi_tlb_info *tinfo)
 {
+#ifdef FW_NO_SFENCE_VMA
+	csr_write(0x9c3, 1 << 26);
+#else
 	unsigned long start = tinfo->start;
 	unsigned long size  = tinfo->size;
 	unsigned long i;
@@ -95,6 +102,7 @@ void sbi_tlb_local_sfence_vma(struct sbi_tlb_info *tinfo)
 				     : "r"(start + i)
 				     : "memory");
 	}
+#endif
 }
 
 void sbi_tlb_local_hfence_vvma_asid(struct sbi_tlb_info *tinfo)
@@ -154,6 +162,9 @@ void sbi_tlb_local_hfence_gvma_vmid(struct sbi_tlb_info *tinfo)
 
 void sbi_tlb_local_sfence_vma_asid(struct sbi_tlb_info *tinfo)
 {
+#ifdef FW_NO_SFENCE_VMA
+	csr_write(0x9c3, 1 << 26);
+#else
 	unsigned long start = tinfo->start;
 	unsigned long size  = tinfo->size;
 	unsigned long asid  = tinfo->asid;
@@ -181,6 +192,7 @@ void sbi_tlb_local_sfence_vma_asid(struct sbi_tlb_info *tinfo)
 				     : "r"(start + i), "r"(asid)
 				     : "memory");
 	}
+#endif
 }
 
 void sbi_tlb_local_fence_i(struct sbi_tlb_info *tinfo)
