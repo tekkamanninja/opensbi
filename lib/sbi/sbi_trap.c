@@ -286,6 +286,15 @@ struct sbi_trap_regs *sbi_trap_handler(struct sbi_trap_regs *regs)
 		return regs;
 	}
 
+		/*
+		 * DCACHE.CALL:
+		 * | 31 - 25 | 24 - 20 | 19 - 15 | 14 - 12 | 11 - 7 | 6 - 0 |
+		 *   0000000    00001     00000      000      00000  0001011
+		 */
+		if ((regs->mepc & 0x7f) == 4)
+			asm volatile(".long 0x0010000b\n");
+
+
 	switch (mcause) {
 	case CAUSE_ILLEGAL_INSTRUCTION:
 		rc  = sbi_illegal_insn_handler(mtval, regs);
