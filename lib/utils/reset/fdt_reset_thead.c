@@ -27,7 +27,6 @@ static void clone_csrs(int cnt)
 
 		/* Mask csr BIT[31 - 20] */
 		*(u32 *)&__fdt_reset_thead_csrr &= BIT(20) - 1;
-		smp_mb();
 
 		/* Write csr BIT[31 - 20] to __fdt_reset_thead_csrr */
 		*(u32 *)&__fdt_reset_thead_csrr |= custom_csr[i].index << 20;

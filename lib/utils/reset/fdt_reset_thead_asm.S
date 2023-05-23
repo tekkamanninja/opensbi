@@ -27,7 +27,6 @@ __thead_pre_start_warm:
 	 */
 	li	t1, 0x70013
 	csrw	0x7c2, t1
-	fence rw,rw
 
 	lla	t1, custom_csr
 
@@ -43,5 +42,4 @@ __reset_thead_csr_stub:
 	 */
 	li	t1, 0x70013
 	csrw	0x7c2, t1
-	fence rw,rw
 	j _start_warm
