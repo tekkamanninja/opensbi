@@ -5,6 +5,8 @@
 #include <libfdt.h>
 #include <sbi/riscv_io.h>
 #include <sbi/sbi_bitops.h>
+#include <sbi/sbi_console.h>
+#include <sbi/sbi_error.h>
 #include <sbi/sbi_hart.h>
 #include <sbi/sbi_scratch.h>
 #include <sbi/sbi_system.h>
@@ -58,11 +60,10 @@ extern void __thead_pre_start_warm(void);
 static int thead_reset_init(void *fdt, int nodeoff,
 				 const struct fdt_match *match)
 {
-	char *p;
-	const fdt64_t *val;
+	int rc, len, i;
+	u32 tmp;
 	const fdt32_t *val_w;
-	int len, i;
-	u32 t, tmp = 0;
+	uint64_t reg_addr, reg_size;
 
 	/* Prepare clone csrs */
 	val_w = fdt_getprop(fdt, nodeoff, "csr-copy", &len);
@@ -85,45 +86,41 @@ static int thead_reset_init(void *fdt, int nodeoff,
 	if (fdt_getprop(fdt, nodeoff, "using-csr-reset", &len)) {
 		csr_write(0x7c7, (ulong)&__thead_pre_start_warm);
 		csr_write(0x7c6, -1);
+		goto out;
 	}
 
 	/* Custom reset method for secondary harts */
-	val = fdt_getprop(fdt, nodeoff, "entry-reg", &len);
-	if (len > 0 && val) {
-          p = (char *)(ulong)fdt64_to_cpu(*val);
+	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &reg_addr, &reg_size);
+	if (rc < 0)
+		return SBI_ENODEV;
 
-		val_w = fdt_getprop(fdt, nodeoff, "entry-cnt", &len);
-		if (len > 0 && val_w) {
-			tmp = fdt32_to_cpu(*val_w);
-
-			for (i = 0; i < tmp; i++) {
-				t = (ulong)&__thead_pre_start_warm;
-				writel(t, p + (8 * i));
-				t = (u64)(ulong)&__thead_pre_start_warm >> 32;
-				writel(t, p + (8 * i) + 4);
-			}
-		}
-
-		val = fdt_getprop(fdt, nodeoff, "control-reg", &len);
-		if (len > 0 && val) {
-			p = (void *)(ulong)fdt64_to_cpu(*val);
-
-			val_w = fdt_getprop(fdt, nodeoff, "control-val", &len);
-			if (len > 0 && val_w) {
-				tmp = fdt32_to_cpu(*val_w);
-				tmp |= readl(p);
-				writel(tmp, p);
-			}
-		}
+	for (i = 0; i < reg_size; i++) {
+		tmp = (ulong)&__thead_pre_start_warm;
+		writel(tmp, (char *)(ulong)reg_addr + (i * 8));
+		tmp = (u64)(ulong)&__thead_pre_start_warm >> 32;
+		writel(tmp, (char *)(ulong)reg_addr + (i * 8) + 4);
 	}
 
+	rc = fdt_get_node_addr_size(fdt, nodeoff, 1, &reg_addr, &reg_size);
+	if (rc < 0)
+		return SBI_ENODEV;
+
+	val_w = fdt_getprop(fdt, nodeoff, "reset-ctrl-val", &len);
+	if (len > 0 && val_w) {
+		tmp = fdt32_to_cpu(*val_w);
+		tmp |= readl((char *)(ulong)reg_addr);
+		writel(tmp,  (char *)(ulong)reg_addr);
+	}
+
+out:
 	sbi_system_reset_add_device(&thead_reset);
 
 	return 0;
 }
 
 static const struct fdt_match thead_reset_match[] = {
-	{ .compatible = "thead,reset-sample" },
+	{ .compatible = "thead,common-cpu-reset" },
+	{ .compatible = "thead,th1520-cpu-reset" },
 	{ },
 };
 

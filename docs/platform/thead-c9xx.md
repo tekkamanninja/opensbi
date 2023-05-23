@@ -19,9 +19,6 @@ because it uses generic platform.
 CROSS_COMPILE=riscv64-linux-gnu- PLATFORM=generic /usr/bin/make
 ```
 
-The *T-HEAD C9xx* DTB provided to OpenSBI generic firmwares will usually have
-"riscv,clint0", "riscv,plic0", "thead,reset-sample" compatible strings.
-
 DTS Example1: (Single core, eg: Allwinner D1 - c906)
 ----------------------------------------------------
 
@@ -75,8 +72,8 @@ DTS Example1: (Single core, eg: Allwinner D1 - c906)
 	}
 ```
 
-DTS Example2: (Multi cores with soc reset-regs)
------------------------------------------------
+DTS Example2: (Multi cores, eg: T-HEAD th1520 - c910)
+-----------------------------------------------------
 
 ```
 	cpus {
@@ -143,13 +140,11 @@ DTS Example2: (Multi cores with soc reset-regs)
 		compatible = "simple-bus";
 		ranges;
 
-		reset: reset-sample {
-			compatible = "thead,reset-sample";
-			entry-reg = <0xff 0xff019050>;
-			entry-cnt = <4>;
-			control-reg = <0xff 0xff015004>;
-			control-val = <0x1c>;
-			csr-copy = <0x7f3 0x7c0 0x7c1 0x7c2 0x7c3 0x7c5 0x7cc>;
+		reset-controller@ffff019050 {
+			compatible = "thead,th1520-cpu-reset";
+			reg = <0xff 0xff019050 0x0 0x4>, <0xff 0xff015004 0x0 0x0>;
+			reset-ctrl-val = <0x1c>;
+			csr-copy = <0x7f3 0x7c0 0x7c1 0x7c2 0x7c3 0x7c5 0x7cc 0x7ce>;
 		};
 
 		clint0: clint@ffdc000000 {
@@ -186,7 +181,7 @@ DTS Example2: (Multi cores with old reset csrs)
 -----------------------------------------------
 ```
 	reset: reset-sample {
-		compatible = "thead,reset-sample";
+		compatible = "thead,common-cpu-reset";
 		using-csr-reset;
 		csr-copy = <0x7c0 0x7c1 0x7c2 0x7c3 0x7c5 0x7cc
 			    0x3b0 0x3b1 0x3b2 0x3b3
